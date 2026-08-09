@@ -11,6 +11,9 @@ const PortalRepresentante: React.FC = () => {
   const [mensualidades, setMensualidades] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
+  const userStr = localStorage.getItem('user');
+  const user = userStr ? JSON.parse(userStr) : { nombre: 'Representante' };
+
   // Formulario de Pago
   const [mensualidadId, setMensualidadId] = useState('');
   const [monto, setMonto] = useState('');
@@ -27,7 +30,9 @@ const PortalRepresentante: React.FC = () => {
   const fetchEstudiantes = async () => {
     try {
       const res = await api.get('/academico/estudiantes');
-      setEstudiantes(res.data);
+      // Filtrar para que solo vea a sus hijos usando el correo como identificador
+      const misEstudiantes = res.data.filter((est: any) => est.representante?.correo === user.email);
+      setEstudiantes(misEstudiantes);
     } catch (error) {
       toast.error('Error al cargar estudiantes');
     }
@@ -103,7 +108,7 @@ const PortalRepresentante: React.FC = () => {
           <h1 style={{ margin: 0, fontSize: '1.2rem', fontFamily: 'var(--font-heading)' }}>ACADEMIA - Portal Representante</h1>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <span>Bienvenido, Representante</span>
+          <span>Bienvenido(a), {user.nombre}</span>
           <button 
             onClick={() => navigate('/login')}
             style={{ background: 'rgba(255,255,255,0.2)', border: 'none', color: 'white', padding: '0.5rem 1rem', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
@@ -126,7 +131,7 @@ const PortalRepresentante: React.FC = () => {
           >
             <option value="">-- Seleccionar Estudiante --</option>
             {estudiantes.map(est => (
-              <option key={est.id} value={est.id}>{est.nombre} {est.apellido} (CI: {est.cedula})</option>
+              <option key={est.id} value={est.id}>{est.nombre} {est.apellido}</option>
             ))}
           </select>
         </div>

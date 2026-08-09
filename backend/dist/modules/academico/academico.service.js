@@ -57,10 +57,20 @@ let AcademicoService = class AcademicoService {
     async updateEstudiante(id, updateDto) {
         const estudiante = await this.findOneEstudiante(id);
         this.estudianteRepo.merge(estudiante, updateDto);
+        if (updateDto.categoria_id) {
+            estudiante.categoria = null;
+        }
+        if (updateDto.representante_id) {
+            estudiante.representante = null;
+        }
         return await this.estudianteRepo.save(estudiante);
     }
     async removeEstudiante(id) {
         const estudiante = await this.findOneEstudiante(id);
+        await this.estudianteRepo.query(`DELETE FROM asistencia WHERE estudiante_id = ?`, [id]);
+        await this.estudianteRepo.query(`DELETE FROM mensualidad WHERE estudiante_id = ?`, [id]);
+        await this.estudianteRepo.query(`DELETE FROM asignacion_equipamiento WHERE estudiante_id = ?`, [id]);
+        await this.estudianteRepo.query(`DELETE FROM ficha_medica WHERE estudiante_id = ?`, [id]);
         await this.estudianteRepo.remove(estudiante);
     }
     async createCategoria(dto) {

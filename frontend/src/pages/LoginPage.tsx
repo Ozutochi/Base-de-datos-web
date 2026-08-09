@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { Mail, Lock, ArrowLeft, Shield } from 'lucide-react';
 import haalandImg from '../assets/haaland.png';
 
+import toast from 'react-hot-toast';
+
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
@@ -11,7 +13,25 @@ const LoginPage: React.FC = () => {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    localStorage.setItem('user', JSON.stringify({ role, email }));
+    
+    // Obtener usuarios simulados registrados (V3 para ignorar los viejos como Francisco)
+    const mockUsers = JSON.parse(localStorage.getItem('mockUsersV3') || '[]');
+    const registeredUser = mockUsers.find((u: any) => u.email === email && u.rol === role);
+
+    if (!registeredUser) {
+      if (role === 'administrador') {
+        toast.error('No existe un administrador registrado con ese correo.');
+      } else {
+        toast.error('No existe un representante registrado con ese correo.');
+      }
+      return;
+    }
+
+    localStorage.setItem('user', JSON.stringify({ 
+      role, 
+      email,
+      nombre: registeredUser.nombre || (role === 'administrador' ? 'Administrador' : 'Representante')
+    }));
     
     if (role === 'representante') {
       navigate('/portal-representante');
@@ -99,11 +119,6 @@ const LoginPage: React.FC = () => {
             </button>
           </div>
         </div>
-
-        <button onClick={() => navigate('/')} className="back-link" style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
-          <ArrowLeft size={16} />
-          Volver a la página principal
-        </button>
       </div>
     </div>
   );

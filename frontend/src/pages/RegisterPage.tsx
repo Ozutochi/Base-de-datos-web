@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User, Mail, Lock, ArrowLeft, Shield } from 'lucide-react';
-import haalandImg from '../assets/haaland.png'; // Reutilizamos la imagen
+import haalandImg from '../assets/haaland.png';
+import api from '../services/api';
 
 const RegisterPage: React.FC = () => {
   const navigate = useNavigate();
@@ -9,19 +10,46 @@ const RegisterPage: React.FC = () => {
     nombre: '',
     email: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    rol: 'administrador'
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     if (formData.password !== formData.confirmPassword) {
       alert("Las contraseñas no coinciden");
       return;
     }
+    
+    // Guardar usuario simulado en localStorage (Usamos V3 para el login MVP y limpiar memoria)
+    const users = JSON.parse(localStorage.getItem('mockUsersV3') || '[]');
+    users.push({ nombre: formData.nombre, email: formData.email, rol: formData.rol });
+    localStorage.setItem('mockUsersV3', JSON.stringify(users));
+
+    // Guardar en la base de datos real para que aparezcan en los módulos
+    try {
+      const parts = formData.nombre.trim().split(' ');
+      const nombre = parts[0];
+      const apellido = parts.slice(1).join(' ') || 'N/A';
+      
+      await api.post('/usuarios', {
+        nombre,
+        apellido,
+        cedula: 'V-' + Math.floor(Math.random() * 100000000), // Cédula autogenerada
+        correo: formData.email,
+        telefono: '',
+        password_hash: formData.password,
+        rol_id: formData.rol === 'representante' ? 1 : 2, // 1 es Representante en BD
+        estado: 'Activo'
+      });
+    } catch (error) {
+      console.error('Error guardando usuario en BD:', error);
+    }
+
     console.log('Registrando usuario:', formData);
     navigate('/login');
   };
@@ -105,6 +133,19 @@ const RegisterPage: React.FC = () => {
               />
             </div>
 
+            <div className="input-group">
+              <select 
+                name="rol"
+                className="login-input" 
+                style={{ appearance: 'auto', paddingLeft: '1.2rem', color: '#666' }}
+                value={formData.rol}
+                onChange={(e) => setFormData({ ...formData, rol: e.target.value })}
+              >
+                <option value="administrador">Registrar como Administrador</option>
+                <option value="representante">Registrar como Representante</option>
+              </select>
+            </div>
+
             <button type="submit" className="login-button">
               REGISTRARSE
             </button>
@@ -120,11 +161,6 @@ const RegisterPage: React.FC = () => {
             </button>
           </div>
         </div>
-
-        <button onClick={() => navigate('/')} className="back-link" style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
-          <ArrowLeft size={16} />
-          Volver a la página principal
-        </button>
       </div>
     </div>
   );

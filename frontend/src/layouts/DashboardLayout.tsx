@@ -15,6 +15,13 @@ import {
 const DashboardLayout: React.FC = () => {
   const navigate = useNavigate();
 
+  const userStr = localStorage.getItem('user');
+  const user = userStr ? JSON.parse(userStr) : { nombre: 'Administrador', email: 'admin@academia.pro', role: 'administrador' };
+  
+  const initials = user.nombre
+    ? user.nombre.split(' ').map((n: string) => n[0]).join('').substring(0, 2).toUpperCase()
+    : 'AD';
+
   const handleLogout = () => {
     navigate('/login');
   };
@@ -65,24 +72,16 @@ const DashboardLayout: React.FC = () => {
       {/* Main Content Area */}
       <main className="dashboard-main">
         {/* Top Header */}
-        <header className="dashboard-header">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', color: '#666' }}>
-            <Search size={20} />
-            <input 
-              type="text" 
-              placeholder="Buscar..." 
-              style={{ border: 'none', background: 'transparent', outline: 'none', fontSize: '1rem', width: '300px' }} 
-            />
-          </div>
+        <header className="dashboard-header" style={{ justifyContent: 'flex-end' }}>
           
           <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', cursor: 'pointer' }}>
               <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: 'var(--primary-blue)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>
-                AD
+                {initials}
               </div>
               <div>
-                <p style={{ margin: 0, fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-dark)' }}>Administrador</p>
-                <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-light)' }}>admin@academia.pro</p>
+                <p style={{ margin: 0, fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-dark)' }}>{user.nombre}</p>
+                <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-light)' }}>{user.email}</p>
               </div>
             </div>
           </div>

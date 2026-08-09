@@ -5,7 +5,7 @@ import api from '../services/api';
 import Modal from '../components/Modal';
 
 interface Estudiante {
-  id_estudiante: number;
+  id: number;
   nombre: string;
   apellido: string;
   fecha_nacimiento: string;
@@ -17,6 +17,8 @@ interface Estudiante {
 
 const EstudiantesPage: React.FC = () => {
   const [estudiantes, setEstudiantes] = useState<Estudiante[]>([]);
+  const [representantes, setRepresentantes] = useState<any[]>([]);
+  const [categorias, setCategorias] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   
   // Modal state
@@ -37,10 +39,16 @@ const EstudiantesPage: React.FC = () => {
   const fetchEstudiantes = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/academico/estudiantes');
-      setEstudiantes(response.data);
+      const [estudiantesRes, representantesRes, categoriasRes] = await Promise.all([
+        api.get('/academico/estudiantes'),
+        api.get('/usuarios?rol_id=1'),
+        api.get('/academico/categorias')
+      ]);
+      setEstudiantes(estudiantesRes.data);
+      setRepresentantes(representantesRes.data);
+      setCategorias(categoriasRes.data);
     } catch (error) {
-      console.error('Error fetching estudiantes:', error);
+      console.error('Error fetching data:', error);
       toast.error('Error al cargar la lista de estudiantes');
     } finally {
       setLoading(false);
@@ -58,7 +66,7 @@ const EstudiantesPage: React.FC = () => {
 
   const openModal = (estudiante?: Estudiante) => {
     if (estudiante) {
-      setEditingId(estudiante.id_estudiante);
+      setEditingId(estudiante.id);
       setFormData({
         nombre: estudiante.nombre,
         apellido: estudiante.apellido,
@@ -145,8 +153,8 @@ const EstudiantesPage: React.FC = () => {
                 </tr>
               ) : (
                 estudiantes.map((est) => (
-                  <tr key={est.id_estudiante}>
-                    <td>#{est.id_estudiante}</td>
+                  <tr key={est.id}>
+                    <td>#{est.id}</td>
                     <td style={{ fontWeight: 500 }}>{est.nombre} {est.apellido}</td>
                     <td>{new Date(est.fecha_nacimiento).toLocaleDateString()}</td>
                     <td>{new Date(est.fecha_ingreso).toLocaleDateString()}</td>
@@ -167,7 +175,7 @@ const EstudiantesPage: React.FC = () => {
                         <button className="action-btn edit" onClick={() => openModal(est)} title="Editar">
                           <Edit2 size={18} />
                         </button>
-                        <button className="action-btn delete" onClick={() => handleDelete(est.id_estudiante)} title="Eliminar">
+                        <button className="action-btn delete" onClick={() => handleDelete(est.id)} title="Eliminar">
                           <Trash2 size={18} />
                         </button>
                       </div>
@@ -208,9 +216,30 @@ const EstudiantesPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Ocultamos temporalmente los selectores de Representante y Categoría hasta que existan esos módulos */}
-          <input type="hidden" name="representante_id" value={formData.representante_id} />
-          <input type="hidden" name="categoria_id" value={formData.categoria_id} />
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+            <div className="form-group">
+              <label>Representante</label>
+              <select name="representante_id" className="form-input" value={formData.representante_id} onChange={handleInputChange} required>
+                <option value="">Seleccione un representante</option>
+                {representantes.map(rep => (
+                  <option key={rep.id} value={rep.id}>
+                    {rep.nombre} {rep.apellido} ({rep.correo})
+                  </option>
+                ))}
+              </select>
+            </div>
+            
+            <div className="form-group">
+              <label>Categoría</label>
+              <select name="categoria_id" className="form-input" value={formData.categoria_id} onChange={handleInputChange} required>
+                <option value="">Seleccione una categoría</option>
+                {categorias.map(cat => (
+                  <option key={cat.id} value={cat.id}>{cat.nombre}</option>
+                ))}
+                {categorias.length === 0 && <option value="1">Categoría por Defecto (Sub-10)</option>}
+              </select>
+            </div>
+          </div>
 
           <div className="form-group">
             <label>Estado</label>

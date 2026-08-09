@@ -52,11 +52,28 @@ export class AcademicoService {
   async updateEstudiante(id: number, updateDto: any): Promise<Estudiante> {
     const estudiante = await this.findOneEstudiante(id);
     this.estudianteRepo.merge(estudiante, updateDto);
+    
+    // Limpiar las relaciones cacheadas para forzar que TypeORM guarde los nuevos IDs crudos
+    if (updateDto.categoria_id) {
+      estudiante.categoria = null as any;
+    }
+    if (updateDto.representante_id) {
+      estudiante.representante = null as any;
+    }
+    
     return await this.estudianteRepo.save(estudiante);
   }
 
   async removeEstudiante(id: number): Promise<void> {
     const estudiante = await this.findOneEstudiante(id);
+    
+    // Eliminar todas las relaciones en otras tablas usando query crudo
+    // para saltarnos los conflictos de Foreign Keys sin inyectar repositorios externos
+    await this.estudianteRepo.query(`DELETE FROM asistencia WHERE estudiante_id = ?`, [id]);
+    await this.estudianteRepo.query(`DELETE FROM mensualidad WHERE estudiante_id = ?`, [id]);
+    await this.estudianteRepo.query(`DELETE FROM asignacion_equipamiento WHERE estudiante_id = ?`, [id]);
+    await this.estudianteRepo.query(`DELETE FROM ficha_medica WHERE estudiante_id = ?`, [id]);
+    
     await this.estudianteRepo.remove(estudiante);
   }
 
