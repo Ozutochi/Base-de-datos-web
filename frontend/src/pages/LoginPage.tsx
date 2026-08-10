@@ -9,8 +9,6 @@ const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState('administrador');
-
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -21,16 +19,14 @@ const LoginPage: React.FC = () => {
     ];
     const storedUsers = JSON.parse(localStorage.getItem('mockUsersV3') || '[]');
     const mockUsers = [...defaultUsers, ...storedUsers];
-    const registeredUser = mockUsers.find((u: any) => u.email === email && u.rol === role);
+    const registeredUser = mockUsers.find((u: any) => u.email === email);
 
     if (!registeredUser) {
-      if (role === 'administrador') {
-        toast.error('No existe un administrador registrado con ese correo.');
-      } else {
-        toast.error('No existe un representante registrado con ese correo.');
-      }
+      toast.error('No existe ningún usuario registrado con ese correo.');
       return;
     }
+    
+    const role = registeredUser.rol;
 
     localStorage.setItem('user', JSON.stringify({ 
       role, 
@@ -97,17 +93,7 @@ const LoginPage: React.FC = () => {
               />
             </div>
 
-            <div className="input-group">
-              <select 
-                className="login-input" 
-                style={{ appearance: 'auto', paddingLeft: '1.2rem', color: '#666' }}
-                value={role}
-                onChange={(e) => setRole(e.target.value)}
-              >
-                <option value="administrador">Entrar como Administrador</option>
-                <option value="representante">Entrar como Representante</option>
-              </select>
-            </div>
+
 
             <button type="submit" className="login-button">
               INICIAR SESIÓN

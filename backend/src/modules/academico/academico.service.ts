@@ -54,18 +54,15 @@ export class AcademicoService {
   }
 
   async updateEstudiante(id: number, updateDto: any): Promise<Estudiante> {
-    const estudiante = await this.findOneEstudiante(id);
-    this.estudianteRepo.merge(estudiante, updateDto);
+    // Verificar que el estudiante existe
+    await this.findOneEstudiante(id);
     
-    // Limpiar las relaciones cacheadas para forzar que TypeORM guarde los nuevos IDs crudos
-    if (updateDto.categoria_id) {
-      estudiante.categoria = null as any;
-    }
-    if (updateDto.representante_id) {
-      estudiante.representante = null as any;
-    }
+    // Usar update directamente evita problemas con TypeORM intentando sincronizar
+    // las relaciones cargadas (categoria, representante) con nulos.
+    await this.estudianteRepo.update(id, updateDto);
     
-    return await this.estudianteRepo.save(estudiante);
+    // Retornar el estudiante actualizado
+    return await this.findOneEstudiante(id);
   }
 
   async removeEstudiante(id: number): Promise<void> {

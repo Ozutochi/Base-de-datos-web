@@ -12,7 +12,8 @@ import {
   FileText, 
   History, 
   Search,
-  Filter
+  Filter,
+  Activity
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../services/api';
@@ -43,6 +44,18 @@ const PortalRepresentante: React.FC = () => {
   const [referencia, setReferencia] = useState('');
   const [banco, setBanco] = useState('');
   const [fechaPago, setFechaPago] = useState(new Date().toISOString().split('T')[0]);
+
+  // Ficha Médica State (de origin/main)
+  const [fichaFormData, setFichaFormData] = useState({
+    tipo_sangre: '',
+    alergias: '',
+    condiciones_preexistentes: '',
+    medicacion_actual: '',
+    contacto_emergencia_nombre: '',
+    contacto_emergencia_telefono: ''
+  });
+  const [savingFicha, setSavingFicha] = useState(false);
+  const [isEditingFicha, setIsEditingFicha] = useState(false);
 
   // --- SECCIÓN 2: HISTORIAL DE PAGOS ---
   const [historialPagos, setHistorialPagos] = useState<any[]>([]);
@@ -139,6 +152,24 @@ const PortalRepresentante: React.FC = () => {
       return;
     }
 
+    setIsEditingFicha(false);
+
+    // Cargar la Ficha Médica del estudiante seleccionado
+    setEstudiantes(currentEstudiantes => {
+      const estudiante = currentEstudiantes.find((est: any) => est.id === Number(id));
+      if (estudiante && estudiante.ficha_medica) {
+        setFichaFormData({
+          tipo_sangre: estudiante.ficha_medica.tipo_sangre || '',
+          alergias: estudiante.ficha_medica.alergias || '',
+          condiciones_preexistentes: estudiante.ficha_medica.condiciones_preexistentes || '',
+          medicacion_actual: estudiante.ficha_medica.medicacion_actual || '',
+          contacto_emergencia_nombre: estudiante.ficha_medica.contacto_emergencia_nombre || '',
+          contacto_emergencia_telefono: estudiante.ficha_medica.contacto_emergencia_telefono || ''
+        });
+      }
+      return currentEstudiantes;
+    });
+
     setLoadingPagos(true);
     try {
       const res = await api.get(`/financiero/mensualidades`);
@@ -194,6 +225,29 @@ const PortalRepresentante: React.FC = () => {
       console.error(error);
       toast.error('Error al registrar el pago');
     }
+  };
+
+  const handleFichaSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const estudiante = estudiantes.find((est: any) => est.id === Number(selectedEstudianteId));
+    if (!estudiante || !estudiante.ficha_medica) return;
+
+    try {
+      setSavingFicha(true);
+      await api.patch(`/academico/fichas-medicas/${estudiante.ficha_medica.id}`, fichaFormData);
+      toast.success('Ficha médica actualizada exitosamente');
+      setIsEditingFicha(false);
+      fetchEstudiantesYRepresentante();
+    } catch (error) {
+      toast.error('Error al actualizar la ficha médica');
+    } finally {
+      setSavingFicha(false);
+    }
+  };
+
+  const handleFichaChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFichaFormData({ ...fichaFormData, [name]: value });
   };
 
   const handleSubmitSolicitud = async (e: React.FormEvent) => {
@@ -354,7 +408,7 @@ const PortalRepresentante: React.FC = () => {
                   Gestión de Pagos y Mensualidades
                 </h2>
                 <p style={{ color: 'var(--text-light)', margin: '0.3rem 0 0 0', fontSize: '0.95rem' }}>
-                  Consulta las mensualidades de tus representados y reporta nuevos pagos.
+                  Consulta las mensualidades de tus representados, actualiza su ficha médica y reporta nuevos pagos.
                 </p>
               </div>
 
@@ -376,109 +430,196 @@ const PortalRepresentante: React.FC = () => {
               </div>
 
               {selectedEstudianteId ? (
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
-                  {/* Lista de Deudas */}
-                  <div style={{ background: 'white', padding: '1.5rem', borderRadius: '12px', boxShadow: '0 2px 4px rgba(0,0,0,0.04)', border: '1px solid #e2e8f0' }}>
-                    <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: 0, borderBottom: '1px solid #eee', paddingBottom: '1rem', color: '#1e293b' }}>
-                      <AlertCircle color="#ef4444" /> Mensualidades Pendientes
-                    </h3>
+                <>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', marginBottom: '2rem' }}>
+                    {/* Lista de Deudas */}
+                    <div style={{ background: 'white', padding: '1.5rem', borderRadius: '12px', boxShadow: '0 2px 4px rgba(0,0,0,0.04)', border: '1px solid #e2e8f0' }}>
+                      <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: 0, borderBottom: '1px solid #eee', paddingBottom: '1rem', color: '#1e293b' }}>
+                        <AlertCircle color="#ef4444" /> Mensualidades Pendientes
+                      </h3>
 
-                    {loadingPagos ? (
-                      <p style={{ color: '#64748b' }}>Cargando deudas...</p>
-                    ) : mensualidades.length === 0 ? (
-                      <div style={{ textAlign: 'center', padding: '2.5rem 0', color: '#10b981' }}>
-                        <CheckCircle size={45} style={{ margin: '0 auto 1rem auto', display: 'block' }} />
-                        <p style={{ fontWeight: 600, margin: 0 }}>¡Todo al día! No hay deudas pendientes para este estudiante.</p>
+                      {loadingPagos ? (
+                        <p style={{ color: '#64748b' }}>Cargando deudas...</p>
+                      ) : mensualidades.length === 0 ? (
+                        <div style={{ textAlign: 'center', padding: '2.5rem 0', color: '#10b981' }}>
+                          <CheckCircle size={45} style={{ margin: '0 auto 1rem auto', display: 'block' }} />
+                          <p style={{ fontWeight: 600, margin: 0 }}>¡Todo al día! No hay deudas pendientes para este estudiante.</p>
+                        </div>
+                      ) : (
+                        <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                          {mensualidades.map((m) => (
+                            <li key={m.id} style={{ padding: '1rem 0', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <div>
+                                <strong style={{ fontSize: '1rem', color: '#1e293b' }}>Mes: {m.mes}/{m.anio}</strong>
+                                <p style={{ margin: 0, fontSize: '0.85rem', color: '#64748b' }}>
+                                  Estado: <span style={{ color: m.estado === 'Vencida' ? '#ef4444' : '#f59e0b', fontWeight: 600 }}>{m.estado}</span>
+                                </p>
+                              </div>
+                              <div style={{ textAlign: 'right' }}>
+                                <span style={{ fontWeight: 'bold', fontSize: '1.1rem', color: '#0f172a' }}>
+                                  {m.monto_adeudado} {m.moneda}
+                                </span>
+                                <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>ID: #{m.id}</div>
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+
+                    {/* Formulario de Reporte de Pago */}
+                    <div style={{ background: 'white', padding: '1.5rem', borderRadius: '12px', boxShadow: '0 2px 4px rgba(0,0,0,0.04)', border: '1px solid #e2e8f0' }}>
+                      <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: 0, borderBottom: '1px solid #eee', paddingBottom: '1rem', color: 'var(--primary-blue)' }}>
+                        <CreditCard color="#0ea5e9" /> Reportar Pago
+                      </h3>
+
+                      <form onSubmit={handleSubmitPago} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1rem' }}>
+                        <div>
+                          <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#334155', marginBottom: '0.3rem' }}>
+                            Mensualidad a pagar (Seleccione ID) *
+                          </label>
+                          <select required value={mensualidadId} onChange={(e) => setMensualidadId(e.target.value)} style={{ width: '100%', padding: '0.65rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}>
+                            <option value="">Seleccione mensualidad...</option>
+                            {mensualidades.map((m) => (
+                              <option key={m.id} value={m.id}>
+                                Mes {m.mes}/{m.anio} - {m.monto_adeudado} {m.moneda}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                          <div>
+                            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#334155', marginBottom: '0.3rem' }}>Monto *</label>
+                            <input type="number" step="0.01" required value={monto} onChange={(e) => setMonto(e.target.value)} style={{ width: '100%', padding: '0.65rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }} placeholder="Ej: 20" />
+                          </div>
+                          <div>
+                            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#334155', marginBottom: '0.3rem' }}>Moneda *</label>
+                            <select required value={moneda} onChange={(e) => setMoneda(e.target.value)} style={{ width: '100%', padding: '0.65rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}>
+                              <option value="Bs">Bolívares (Bs)</option>
+                              <option value="USD">Dólares (USD)</option>
+                            </select>
+                          </div>
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                          <div>
+                            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#334155', marginBottom: '0.3rem' }}>Método de Pago *</label>
+                            <select required value={metodoPago} onChange={(e) => setMetodoPago(e.target.value)} style={{ width: '100%', padding: '0.65rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}>
+                              <option value="Pago Móvil">Pago Móvil</option>
+                              <option value="Transferencia">Transferencia</option>
+                              <option value="Zelle">Zelle</option>
+                              <option value="Efectivo">Efectivo</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#334155', marginBottom: '0.3rem' }}>Fecha del Pago *</label>
+                            <input type="date" required value={fechaPago} onChange={(e) => setFechaPago(e.target.value)} style={{ width: '100%', padding: '0.65rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }} />
+                          </div>
+                        </div>
+
+                        <div>
+                          <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#334155', marginBottom: '0.3rem' }}>Número de Referencia / Comprobante *</label>
+                          <input type="text" required value={referencia} onChange={(e) => setReferencia(e.target.value)} style={{ width: '100%', padding: '0.65rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }} placeholder="Ej: 123456789" />
+                        </div>
+
+                        <div>
+                          <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#334155', marginBottom: '0.3rem' }}>Banco de Origen (Opcional)</label>
+                          <input type="text" value={banco} onChange={(e) => setBanco(e.target.value)} style={{ width: '100%', padding: '0.65rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }} placeholder="Ej: Banesco" />
+                        </div>
+
+                        <button type="submit" style={{ background: 'var(--primary-blue)', color: 'white', border: 'none', padding: '0.85rem', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.95rem', marginTop: '0.5rem' }}>
+                          ENVIAR PAGO PARA REVISIÓN
+                        </button>
+                      </form>
+                    </div>
+                  </div>
+
+                  {/* Ficha Médica del Estudiante */}
+                  <div style={{ background: 'white', padding: '1.5rem', borderRadius: '12px', boxShadow: '0 2px 4px rgba(0,0,0,0.04)', border: '1px solid #e2e8f0' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #eee', paddingBottom: '1rem', marginBottom: '1.5rem' }}>
+                      <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0, color: '#1e293b' }}>
+                        <Activity color="#8b5cf6" /> Ficha Médica del Estudiante
+                      </h3>
+                      {!isEditingFicha && (
+                        <button onClick={() => setIsEditingFicha(true)} style={{ background: 'var(--primary-blue)', color: 'white', border: 'none', padding: '0.5rem 1rem', borderRadius: '6px', cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem' }}>
+                          Editar Ficha
+                        </button>
+                      )}
+                    </div>
+                    <p style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '1.5rem' }}>Por favor, mantenga actualizada la información médica de su representado para emergencias o actividades deportivas.</p>
+
+                    {!isEditingFicha ? (
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem' }}>
+                        <div>
+                          <span style={{ display: 'block', fontSize: '0.85rem', color: '#64748b', fontWeight: 600, marginBottom: '0.2rem' }}>Tipo de Sangre</span>
+                          <span style={{ fontWeight: 500, color: '#1e293b' }}>{fichaFormData.tipo_sangre || 'N/A'}</span>
+                        </div>
+                        <div>
+                          <span style={{ display: 'block', fontSize: '0.85rem', color: '#64748b', fontWeight: 600, marginBottom: '0.2rem' }}>Alergias</span>
+                          <span style={{ fontWeight: 500, color: '#1e293b' }}>{fichaFormData.alergias || 'Ninguna'}</span>
+                        </div>
+                        <div>
+                          <span style={{ display: 'block', fontSize: '0.85rem', color: '#64748b', fontWeight: 600, marginBottom: '0.2rem' }}>Condiciones Preexistentes</span>
+                          <span style={{ fontWeight: 500, color: '#1e293b' }}>{fichaFormData.condiciones_preexistentes || 'Ninguna'}</span>
+                        </div>
+                        <div>
+                          <span style={{ display: 'block', fontSize: '0.85rem', color: '#64748b', fontWeight: 600, marginBottom: '0.2rem' }}>Medicación Actual</span>
+                          <span style={{ fontWeight: 500, color: '#1e293b' }}>{fichaFormData.medicacion_actual || 'Ninguna'}</span>
+                        </div>
+                        <div>
+                          <span style={{ display: 'block', fontSize: '0.85rem', color: '#64748b', fontWeight: 600, marginBottom: '0.2rem' }}>Contacto de Emergencia</span>
+                          <span style={{ fontWeight: 500, color: '#1e293b' }}>{fichaFormData.contacto_emergencia_nombre || 'No especificado'}</span>
+                        </div>
+                        <div>
+                          <span style={{ display: 'block', fontSize: '0.85rem', color: '#64748b', fontWeight: 600, marginBottom: '0.2rem' }}>Teléfono de Emergencia</span>
+                          <span style={{ fontWeight: 500, color: '#1e293b' }}>{fichaFormData.contacto_emergencia_telefono || 'No especificado'}</span>
+                        </div>
                       </div>
                     ) : (
-                      <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-                        {mensualidades.map((m) => (
-                          <li key={m.id} style={{ padding: '1rem 0', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <div>
-                              <strong style={{ fontSize: '1rem', color: '#1e293b' }}>Mes: {m.mes}/{m.anio}</strong>
-                              <p style={{ margin: 0, fontSize: '0.85rem', color: '#64748b' }}>
-                                Estado: <span style={{ color: m.estado === 'Vencida' ? '#ef4444' : '#f59e0b', fontWeight: 600 }}>{m.estado}</span>
-                              </p>
-                            </div>
-                            <div style={{ textAlign: 'right' }}>
-                              <span style={{ fontWeight: 'bold', fontSize: '1.1rem', color: '#0f172a' }}>
-                                {m.monto_adeudado} {m.moneda}
-                              </span>
-                              <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>ID: #{m.id}</div>
-                            </div>
-                          </li>
-                        ))}
-                      </ul>
+                      <form onSubmit={handleFichaSubmit}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                            <label style={{ fontWeight: 600, fontSize: '0.85rem', color: '#334155' }}>Tipo de Sangre *</label>
+                            <input type="text" name="tipo_sangre" value={fichaFormData.tipo_sangre} onChange={handleFichaChange} placeholder="Ej. O+, A-, N/A" required style={{ padding: '0.65rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }} />
+                          </div>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                            <label style={{ fontWeight: 600, fontSize: '0.85rem', color: '#334155' }}>Alergias</label>
+                            <input type="text" name="alergias" value={fichaFormData.alergias} onChange={handleFichaChange} placeholder="Ninguna" style={{ padding: '0.65rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }} />
+                          </div>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                            <label style={{ fontWeight: 600, fontSize: '0.85rem', color: '#334155' }}>Condiciones Preexistentes</label>
+                            <input type="text" name="condiciones_preexistentes" value={fichaFormData.condiciones_preexistentes} onChange={handleFichaChange} placeholder="Ninguna" style={{ padding: '0.65rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }} />
+                          </div>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                            <label style={{ fontWeight: 600, fontSize: '0.85rem', color: '#334155' }}>Medicación Actual</label>
+                            <input type="text" name="medicacion_actual" value={fichaFormData.medicacion_actual} onChange={handleFichaChange} placeholder="Ninguna" style={{ padding: '0.65rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }} />
+                          </div>
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginTop: '1rem' }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                            <label style={{ fontWeight: 600, fontSize: '0.85rem', color: '#334155' }}>Contacto de Emergencia (Nombre) *</label>
+                            <input type="text" name="contacto_emergencia_nombre" value={fichaFormData.contacto_emergencia_nombre} onChange={handleFichaChange} required style={{ padding: '0.65rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }} />
+                          </div>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                            <label style={{ fontWeight: 600, fontSize: '0.85rem', color: '#334155' }}>Teléfono de Emergencia *</label>
+                            <input type="text" name="contacto_emergencia_telefono" value={fichaFormData.contacto_emergencia_telefono} onChange={handleFichaChange} required style={{ padding: '0.65rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }} />
+                          </div>
+                        </div>
+
+                        <div style={{ marginTop: '1.5rem', display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
+                          <button type="button" onClick={() => setIsEditingFicha(false)} disabled={savingFicha} style={{ background: 'transparent', color: '#64748b', border: 'none', padding: '0.8rem 1.5rem', cursor: savingFicha ? 'not-allowed' : 'pointer', fontWeight: 600 }}>
+                            Cancelar
+                          </button>
+                          <button type="submit" disabled={savingFicha} style={{ background: 'var(--primary-blue)', color: 'white', border: 'none', padding: '0.8rem 1.5rem', borderRadius: '8px', cursor: savingFicha ? 'not-allowed' : 'pointer', fontWeight: 'bold' }}>
+                            {savingFicha ? 'GUARDANDO...' : 'GUARDAR FICHA MÉDICA'}
+                          </button>
+                        </div>
+                      </form>
                     )}
                   </div>
-
-                  {/* Formulario de Reporte de Pago */}
-                  <div style={{ background: 'white', padding: '1.5rem', borderRadius: '12px', boxShadow: '0 2px 4px rgba(0,0,0,0.04)', border: '1px solid #e2e8f0' }}>
-                    <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: 0, borderBottom: '1px solid #eee', paddingBottom: '1rem', color: 'var(--primary-blue)' }}>
-                      <CreditCard color="#0ea5e9" /> Reportar Pago
-                    </h3>
-
-                    <form onSubmit={handleSubmitPago} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1rem' }}>
-                      <div>
-                        <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#334155', marginBottom: '0.3rem' }}>
-                          Mensualidad a pagar (Seleccione ID) *
-                        </label>
-                        <select required value={mensualidadId} onChange={(e) => setMensualidadId(e.target.value)} style={{ width: '100%', padding: '0.65rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}>
-                          <option value="">Seleccione mensualidad...</option>
-                          {mensualidades.map((m) => (
-                            <option key={m.id} value={m.id}>
-                              Mes {m.mes}/{m.anio} - {m.monto_adeudado} {m.moneda}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                        <div>
-                          <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#334155', marginBottom: '0.3rem' }}>Monto *</label>
-                          <input type="number" step="0.01" required value={monto} onChange={(e) => setMonto(e.target.value)} style={{ width: '100%', padding: '0.65rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }} placeholder="Ej: 20" />
-                        </div>
-                        <div>
-                          <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#334155', marginBottom: '0.3rem' }}>Moneda *</label>
-                          <select required value={moneda} onChange={(e) => setMoneda(e.target.value)} style={{ width: '100%', padding: '0.65rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}>
-                            <option value="Bs">Bolívares (Bs)</option>
-                            <option value="USD">Dólares (USD)</option>
-                          </select>
-                        </div>
-                      </div>
-
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                        <div>
-                          <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#334155', marginBottom: '0.3rem' }}>Método de Pago *</label>
-                          <select required value={metodoPago} onChange={(e) => setMetodoPago(e.target.value)} style={{ width: '100%', padding: '0.65rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}>
-                            <option value="Pago Móvil">Pago Móvil</option>
-                            <option value="Transferencia">Transferencia</option>
-                            <option value="Zelle">Zelle</option>
-                            <option value="Efectivo">Efectivo</option>
-                          </select>
-                        </div>
-                        <div>
-                          <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#334155', marginBottom: '0.3rem' }}>Fecha del Pago *</label>
-                          <input type="date" required value={fechaPago} onChange={(e) => setFechaPago(e.target.value)} style={{ width: '100%', padding: '0.65rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }} />
-                        </div>
-                      </div>
-
-                      <div>
-                        <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#334155', marginBottom: '0.3rem' }}>Número de Referencia / Comprobante *</label>
-                        <input type="text" required value={referencia} onChange={(e) => setReferencia(e.target.value)} style={{ width: '100%', padding: '0.65rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }} placeholder="Ej: 123456789" />
-                      </div>
-
-                      <div>
-                        <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#334155', marginBottom: '0.3rem' }}>Banco de Origen (Opcional)</label>
-                        <input type="text" value={banco} onChange={(e) => setBanco(e.target.value)} style={{ width: '100%', padding: '0.65rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }} placeholder="Ej: Banesco" />
-                      </div>
-
-                      <button type="submit" style={{ background: 'var(--primary-blue)', color: 'white', border: 'none', padding: '0.85rem', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.95rem', marginTop: '0.5rem' }}>
-                        ENVIAR PAGO PARA REVISIÓN
-                      </button>
-                    </form>
-                  </div>
-                </div>
+                </>
               ) : (
                 <div style={{ background: 'white', padding: '3rem', borderRadius: '12px', textAlign: 'center', color: '#64748b', border: '1px solid #e2e8f0' }}>
                   <p style={{ margin: 0, fontSize: '1rem' }}>Por favor seleccione un estudiante para consultar sus mensualidades pendientes y reportar pagos.</p>

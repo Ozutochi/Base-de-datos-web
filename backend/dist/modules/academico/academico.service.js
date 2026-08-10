@@ -58,15 +58,9 @@ let AcademicoService = class AcademicoService {
         return estudiante;
     }
     async updateEstudiante(id, updateDto) {
-        const estudiante = await this.findOneEstudiante(id);
-        this.estudianteRepo.merge(estudiante, updateDto);
-        if (updateDto.categoria_id) {
-            estudiante.categoria = null;
-        }
-        if (updateDto.representante_id) {
-            estudiante.representante = null;
-        }
-        return await this.estudianteRepo.save(estudiante);
+        await this.findOneEstudiante(id);
+        await this.estudianteRepo.update(id, updateDto);
+        return await this.findOneEstudiante(id);
     }
     async removeEstudiante(id) {
         const estudiante = await this.findOneEstudiante(id);

@@ -10,8 +10,10 @@ export declare class CreateCategoriaDto {
 export declare class UpdateFichaMedicaDto {
     tipo_sangre?: string;
     alergias?: string;
-    condiciones_medicas?: string;
-    nombre_pediatra?: string;
+    condiciones_preexistentes?: string;
+    medicacion_actual?: string;
+    contacto_emergencia_nombre?: string;
+    contacto_emergencia_telefono?: string;
 }
 export declare class CreatePersonalCategoriaDto {
     categoria_id: number;
