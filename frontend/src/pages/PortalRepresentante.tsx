@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Shield, LogOut, CreditCard, AlertCircle, CheckCircle } from 'lucide-react';
+import { Shield, LogOut, CreditCard, AlertCircle, CheckCircle, Activity } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../services/api';
 
@@ -10,6 +10,18 @@ const PortalRepresentante: React.FC = () => {
   const [selectedEstudianteId, setSelectedEstudianteId] = useState<string>('');
   const [mensualidades, setMensualidades] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  
+  // Ficha Medica state
+  const [fichaFormData, setFichaFormData] = useState({
+    tipo_sangre: '',
+    alergias: '',
+    condiciones_preexistentes: '',
+    medicacion_actual: '',
+    contacto_emergencia_nombre: '',
+    contacto_emergencia_telefono: ''
+  });
+  const [savingFicha, setSavingFicha] = useState(false);
+  const [isEditingFicha, setIsEditingFicha] = useState(false);
 
   const userStr = localStorage.getItem('user');
   const user = userStr ? JSON.parse(userStr) : { nombre: 'Representante' };
@@ -45,6 +57,25 @@ const PortalRepresentante: React.FC = () => {
       setMensualidades([]);
       return;
     }
+    
+    setIsEditingFicha(false);
+    
+    // Set ficha data
+    // Use functional state update to ensure we get the latest students list
+    setEstudiantes(currentEstudiantes => {
+      const estudiante = currentEstudiantes.find((est: any) => est.id === Number(id));
+      if (estudiante && estudiante.ficha_medica) {
+        setFichaFormData({
+          tipo_sangre: estudiante.ficha_medica.tipo_sangre || '',
+          alergias: estudiante.ficha_medica.alergias || '',
+          condiciones_preexistentes: estudiante.ficha_medica.condiciones_preexistentes || '',
+          medicacion_actual: estudiante.ficha_medica.medicacion_actual || '',
+          contacto_emergencia_nombre: estudiante.ficha_medica.contacto_emergencia_nombre || '',
+          contacto_emergencia_telefono: estudiante.ficha_medica.contacto_emergencia_telefono || ''
+        });
+      }
+      return currentEstudiantes;
+    });
 
     setLoading(true);
     try {
@@ -66,8 +97,15 @@ const PortalRepresentante: React.FC = () => {
       return;
     }
 
+    const estudiante = estudiantes.find((est: any) => est.id === Number(selectedEstudianteId));
+    if (!estudiante || !estudiante.representante) {
+      toast.error('No se pudo identificar al representante asociado.');
+      return;
+    }
+
     try {
       const payload = {
+        representante_id: estudiante.representante.id,
         mensualidad_id: Number(mensualidadId),
         monto_pagado: Number(monto),
         moneda,
@@ -97,6 +135,29 @@ const PortalRepresentante: React.FC = () => {
       console.error(error);
       toast.error('Error al registrar el pago');
     }
+  };
+
+  const handleFichaSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const estudiante = estudiantes.find((est: any) => est.id === Number(selectedEstudianteId));
+    if (!estudiante || !estudiante.ficha_medica) return;
+
+    try {
+      setSavingFicha(true);
+      await api.patch(`/academico/fichas-medicas/${estudiante.ficha_medica.id}`, fichaFormData);
+      toast.success('Ficha médica actualizada exitosamente');
+      setIsEditingFicha(false);
+      fetchEstudiantes();
+    } catch (error) {
+      toast.error('Error al actualizar la ficha médica');
+    } finally {
+      setSavingFicha(false);
+    }
+  };
+
+  const handleFichaChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFichaFormData({ ...fichaFormData, [name]: value });
   };
 
   return (
@@ -137,7 +198,8 @@ const PortalRepresentante: React.FC = () => {
         </div>
 
         {selectedEstudianteId && (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
+          <>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', marginBottom: '2rem' }}>
             
             {/* Lista de Deudas */}
             <div style={{ background: 'white', padding: '1.5rem', borderRadius: '12px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
@@ -230,7 +292,93 @@ const PortalRepresentante: React.FC = () => {
                 </button>
               </form>
             </div>
-          </div>
+            </div>
+
+            {/* Ficha Medica Form / Read-Only View */}
+            <div style={{ background: 'white', padding: '1.5rem', borderRadius: '12px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #eee', paddingBottom: '1rem', marginBottom: '1.5rem' }}>
+                <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0 }}>
+                  <Activity color="#8b5cf6" /> Ficha Médica
+                </h3>
+                {!isEditingFicha && (
+                  <button onClick={() => setIsEditingFicha(true)} style={{ background: 'var(--primary-blue)', color: 'white', border: 'none', padding: '0.5rem 1rem', borderRadius: '6px', cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem' }}>
+                    Editar Ficha
+                  </button>
+                )}
+              </div>
+              <p style={{ color: '#666', fontSize: '0.9rem', marginBottom: '1.5rem' }}>Por favor, mantenga actualizada la información médica de su representado para cualquier emergencia.</p>
+              
+              {!isEditingFicha ? (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem' }}>
+                  <div>
+                    <span style={{ display: 'block', fontSize: '0.85rem', color: '#666', fontWeight: 600, marginBottom: '0.2rem' }}>Tipo de Sangre</span>
+                    <span style={{ fontWeight: 500, color: '#333' }}>{fichaFormData.tipo_sangre || 'N/A'}</span>
+                  </div>
+                  <div>
+                    <span style={{ display: 'block', fontSize: '0.85rem', color: '#666', fontWeight: 600, marginBottom: '0.2rem' }}>Alergias</span>
+                    <span style={{ fontWeight: 500, color: '#333' }}>{fichaFormData.alergias || 'Ninguna'}</span>
+                  </div>
+                  <div>
+                    <span style={{ display: 'block', fontSize: '0.85rem', color: '#666', fontWeight: 600, marginBottom: '0.2rem' }}>Condiciones Preexistentes</span>
+                    <span style={{ fontWeight: 500, color: '#333' }}>{fichaFormData.condiciones_preexistentes || 'Ninguna'}</span>
+                  </div>
+                  <div>
+                    <span style={{ display: 'block', fontSize: '0.85rem', color: '#666', fontWeight: 600, marginBottom: '0.2rem' }}>Medicación Actual</span>
+                    <span style={{ fontWeight: 500, color: '#333' }}>{fichaFormData.medicacion_actual || 'Ninguna'}</span>
+                  </div>
+                  <div>
+                    <span style={{ display: 'block', fontSize: '0.85rem', color: '#666', fontWeight: 600, marginBottom: '0.2rem' }}>Contacto de Emergencia</span>
+                    <span style={{ fontWeight: 500, color: '#333' }}>{fichaFormData.contacto_emergencia_nombre || 'No especificado'}</span>
+                  </div>
+                  <div>
+                    <span style={{ display: 'block', fontSize: '0.85rem', color: '#666', fontWeight: 600, marginBottom: '0.2rem' }}>Teléfono de Emergencia</span>
+                    <span style={{ fontWeight: 500, color: '#333' }}>{fichaFormData.contacto_emergencia_telefono || 'No especificado'}</span>
+                  </div>
+                </div>
+              ) : (
+                <form onSubmit={handleFichaSubmit}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      <label style={{ fontWeight: 600, fontSize: '0.9rem' }}>Tipo de Sangre</label>
+                      <input type="text" name="tipo_sangre" value={fichaFormData.tipo_sangre} onChange={handleFichaChange} placeholder="Ej. O+, A-, N/A" required style={{ padding: '0.6rem', borderRadius: '6px', border: '1px solid #ddd' }} />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      <label style={{ fontWeight: 600, fontSize: '0.9rem' }}>Alergias</label>
+                      <input type="text" name="alergias" value={fichaFormData.alergias} onChange={handleFichaChange} placeholder="Ninguna" style={{ padding: '0.6rem', borderRadius: '6px', border: '1px solid #ddd' }} />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      <label style={{ fontWeight: 600, fontSize: '0.9rem' }}>Condiciones Preexistentes</label>
+                      <input type="text" name="condiciones_preexistentes" value={fichaFormData.condiciones_preexistentes} onChange={handleFichaChange} placeholder="Ninguna" style={{ padding: '0.6rem', borderRadius: '6px', border: '1px solid #ddd' }} />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      <label style={{ fontWeight: 600, fontSize: '0.9rem' }}>Medicación Actual</label>
+                      <input type="text" name="medicacion_actual" value={fichaFormData.medicacion_actual} onChange={handleFichaChange} placeholder="Ninguna" style={{ padding: '0.6rem', borderRadius: '6px', border: '1px solid #ddd' }} />
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginTop: '1rem' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      <label style={{ fontWeight: 600, fontSize: '0.9rem' }}>Contacto de Emergencia (Nombre)</label>
+                      <input type="text" name="contacto_emergencia_nombre" value={fichaFormData.contacto_emergencia_nombre} onChange={handleFichaChange} required style={{ padding: '0.6rem', borderRadius: '6px', border: '1px solid #ddd' }} />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      <label style={{ fontWeight: 600, fontSize: '0.9rem' }}>Teléfono de Emergencia</label>
+                      <input type="text" name="contacto_emergencia_telefono" value={fichaFormData.contacto_emergencia_telefono} onChange={handleFichaChange} required style={{ padding: '0.6rem', borderRadius: '6px', border: '1px solid #ddd' }} />
+                    </div>
+                  </div>
+
+                  <div style={{ marginTop: '1.5rem', display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
+                    <button type="button" onClick={() => setIsEditingFicha(false)} disabled={savingFicha} style={{ background: 'transparent', color: '#666', border: 'none', padding: '0.8rem 1.5rem', cursor: savingFicha ? 'not-allowed' : 'pointer', fontWeight: 600 }}>
+                      Cancelar
+                    </button>
+                    <button type="submit" disabled={savingFicha} style={{ background: 'var(--primary-blue)', color: 'white', border: 'none', padding: '0.8rem 1.5rem', borderRadius: '8px', cursor: savingFicha ? 'not-allowed' : 'pointer', fontWeight: 'bold' }}>
+                      {savingFicha ? 'GUARDANDO...' : 'GUARDAR FICHA MÉDICA'}
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
+          </>
         )}
       </main>
     </div>

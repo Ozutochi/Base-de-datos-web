@@ -18,8 +18,10 @@ let FichaMedica = class FichaMedica {
     estudiante;
     tipo_sangre;
     alergias;
-    condiciones_medicas;
-    nombre_pediatra;
+    condiciones_preexistentes;
+    medicacion_actual;
+    contacto_emergencia_nombre;
+    contacto_emergencia_telefono;
     fecha_actualizacion;
 };
 exports.FichaMedica = FichaMedica;
@@ -47,11 +49,19 @@ __decorate([
 __decorate([
     (0, typeorm_1.Column)({ type: 'text', nullable: true }),
     __metadata("design:type", String)
-], FichaMedica.prototype, "condiciones_medicas", void 0);
+], FichaMedica.prototype, "condiciones_preexistentes", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'text', nullable: true }),
+    __metadata("design:type", String)
+], FichaMedica.prototype, "medicacion_actual", void 0);
 __decorate([
     (0, typeorm_1.Column)({ type: 'varchar', length: 100, nullable: true }),
     __metadata("design:type", String)
-], FichaMedica.prototype, "nombre_pediatra", void 0);
+], FichaMedica.prototype, "contacto_emergencia_nombre", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'varchar', length: 50, nullable: true }),
+    __metadata("design:type", String)
+], FichaMedica.prototype, "contacto_emergencia_telefono", void 0);
 __decorate([
     (0, typeorm_1.Column)({ type: 'date' }),
     __metadata("design:type", String)

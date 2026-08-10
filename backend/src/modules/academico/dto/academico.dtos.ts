@@ -31,11 +31,19 @@ export class UpdateFichaMedicaDto {
 
   @IsString()
   @IsOptional()
-  condiciones_medicas?: string;
+  condiciones_preexistentes?: string;
 
   @IsString()
   @IsOptional()
-  nombre_pediatra?: string;
+  medicacion_actual?: string;
+
+  @IsString()
+  @IsOptional()
+  contacto_emergencia_nombre?: string;
+
+  @IsString()
+  @IsOptional()
+  contacto_emergencia_telefono?: string;
 }
 
 export class CreatePersonalCategoriaDto {

@@ -45,8 +45,10 @@ __decorate([
 class UpdateFichaMedicaDto {
     tipo_sangre;
     alergias;
-    condiciones_medicas;
-    nombre_pediatra;
+    condiciones_preexistentes;
+    medicacion_actual;
+    contacto_emergencia_nombre;
+    contacto_emergencia_telefono;
 }
 exports.UpdateFichaMedicaDto = UpdateFichaMedicaDto;
 __decorate([
@@ -63,12 +65,22 @@ __decorate([
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", String)
-], UpdateFichaMedicaDto.prototype, "condiciones_medicas", void 0);
+], UpdateFichaMedicaDto.prototype, "condiciones_preexistentes", void 0);
 __decorate([
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", String)
-], UpdateFichaMedicaDto.prototype, "nombre_pediatra", void 0);
+], UpdateFichaMedicaDto.prototype, "medicacion_actual", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], UpdateFichaMedicaDto.prototype, "contacto_emergencia_nombre", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], UpdateFichaMedicaDto.prototype, "contacto_emergencia_telefono", void 0);
 class CreatePersonalCategoriaDto {
     categoria_id;
     usuario_id;

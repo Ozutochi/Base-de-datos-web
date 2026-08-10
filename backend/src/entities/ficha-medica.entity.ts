@@ -20,10 +20,16 @@ export class FichaMedica {
   alergias: string;
 
   @Column({ type: 'text', nullable: true })
-  condiciones_medicas: string;
+  condiciones_preexistentes: string;
+
+  @Column({ type: 'text', nullable: true })
+  medicacion_actual: string;
 
   @Column({ type: 'varchar', length: 100, nullable: true })
-  nombre_pediatra: string;
+  contacto_emergencia_nombre: string;
+
+  @Column({ type: 'varchar', length: 50, nullable: true })
+  contacto_emergencia_telefono: string;
 
   @Column({ type: 'date' })
   fecha_actualizacion: string;

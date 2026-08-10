@@ -5,7 +5,9 @@ export declare class FichaMedica {
     estudiante: Estudiante;
     tipo_sangre: string;
     alergias: string;
-    condiciones_medicas: string;
-    nombre_pediatra: string;
+    condiciones_preexistentes: string;
+    medicacion_actual: string;
+    contacto_emergencia_nombre: string;
+    contacto_emergencia_telefono: string;
     fecha_actualizacion: string;
 }
