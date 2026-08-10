@@ -16,6 +16,7 @@ import { Inventario } from './entities/inventario.entity';
 import { AsignacionEquipamiento } from './entities/asignacion-equipamiento.entity';
 import { Mensualidad } from './entities/mensualidad.entity';
 import { Pago } from './entities/pago.entity';
+import { SolicitudInscripcion } from './entities/solicitud-inscripcion.entity';
 import { UsuariosModule } from './modules/usuarios/usuarios.module';
 import { AcademicoModule } from './modules/academico/academico.module';
 import { DeportivoModule } from './modules/deportivo/deportivo.module';
@@ -47,6 +48,7 @@ import { DashboardModule } from './modules/dashboard/dashboard.module';
         AsignacionEquipamiento,
         Mensualidad,
         Pago,
+        SolicitudInscripcion,
       ],
       synchronize: true, // Esto creará las tablas automáticamente basadas en las entidades
     }),

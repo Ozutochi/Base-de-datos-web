@@ -12,6 +12,7 @@ import AcademicoLayout from './layouts/AcademicoLayout';
 import CategoriasPage from './pages/CategoriasPage';
 import FichasMedicasPage from './pages/FichasMedicasPage';
 import AsignacionPersonalPage from './pages/AsignacionPersonalPage';
+import SolicitudesInscripcionPage from './pages/SolicitudesInscripcionPage';
 
 import DeportivoLayout from './layouts/DeportivoLayout';
 import SesionesEntrenamientoPage from './pages/SesionesEntrenamientoPage';
@@ -28,12 +29,49 @@ import InventarioLayout from './layouts/InventarioLayout';
 import ArticulosPage from './pages/ArticulosPage';
 import AsignacionesInventarioPage from './pages/AsignacionesInventarioPage';
 
+import { useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import './index.css';
+
+const routeTitles: Record<string, string> = {
+  '/login': 'Iniciar Sesión',
+  '/register': 'Registro',
+  '/portal-representante': 'Portal Representante',
+  '/dashboard': 'Dashboard',
+  '/dashboard/usuarios/estudiantes': 'Estudiantes',
+  '/dashboard/usuarios/representantes': 'Representantes',
+  '/dashboard/usuarios/docentes': 'Docentes',
+  '/dashboard/academico/categorias': 'Categorías',
+  '/dashboard/academico/fichas-medicas': 'Fichas Médicas',
+  '/dashboard/academico/asignacion': 'Asignación de Personal',
+  '/dashboard/academico/solicitudes': 'Solicitudes de Inscripción',
+  '/dashboard/deportivo/sesiones': 'Sesiones de Entrenamiento',
+  '/dashboard/deportivo/partidos': 'Partidos',
+  '/dashboard/deportivo/asistencias': 'Asistencias',
+  '/dashboard/financiero/pagos': 'Pagos',
+  '/dashboard/financiero/mensualidades': 'Mensualidades',
+  '/dashboard/financiero/tarifas': 'Tarifas',
+  '/dashboard/financiero/reportes': 'Reportes de Morosidad',
+  '/dashboard/inventario/articulos': 'Artículos de Inventario',
+  '/dashboard/inventario/asignaciones': 'Asignaciones de Inventario',
+};
+
+function TitleManager() {
+  const location = useLocation();
+
+  useEffect(() => {
+    const title = routeTitles[location.pathname] || 'Sistema';
+    document.title = `ACADEMIA || ${title}`;
+  }, [location.pathname]);
+
+  return null;
+}
 
 function App() {
   return (
     <Router>
+      <TitleManager />
       <Toaster position="top-right" />
       <Routes>
         {/* Rutas Públicas */}
@@ -57,6 +95,7 @@ function App() {
             <Route path="categorias" element={<CategoriasPage />} />
             <Route path="fichas-medicas" element={<FichasMedicasPage />} />
             <Route path="asignacion" element={<AsignacionPersonalPage />} />
+            <Route path="solicitudes" element={<SolicitudesInscripcionPage />} />
           </Route>
           {/* Módulo Deportivo (Pestañas) */}
           <Route path="deportivo" element={<DeportivoLayout />}>

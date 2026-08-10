@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Mail, Lock, ArrowLeft, Shield } from 'lucide-react';
+import { Mail, Lock, Shield } from 'lucide-react';
 import haalandImg from '../assets/haaland.png';
 
 import toast from 'react-hot-toast';
@@ -14,8 +14,13 @@ const LoginPage: React.FC = () => {
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Obtener usuarios simulados registrados (V3 para ignorar los viejos como Francisco)
-    const mockUsers = JSON.parse(localStorage.getItem('mockUsersV3') || '[]');
+    // Obtener usuarios simulados registrados + usuarios por defecto
+    const defaultUsers = [
+      { nombre: 'Admin Sistema', email: 'admin@academia.pro', rol: 'administrador' },
+      { nombre: 'Juan Pérez', email: 'representante@academia.pro', rol: 'representante' },
+    ];
+    const storedUsers = JSON.parse(localStorage.getItem('mockUsersV3') || '[]');
+    const mockUsers = [...defaultUsers, ...storedUsers];
     const registeredUser = mockUsers.find((u: any) => u.email === email && u.rol === role);
 
     if (!registeredUser) {

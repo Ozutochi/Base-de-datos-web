@@ -20,16 +20,19 @@ const estudiante_entity_1 = require("../../entities/estudiante.entity");
 const ficha_medica_entity_1 = require("../../entities/ficha-medica.entity");
 const categoria_entity_1 = require("../../entities/categoria.entity");
 const personal_categoria_entity_1 = require("../../entities/personal-categoria.entity");
+const solicitud_inscripcion_entity_1 = require("../../entities/solicitud-inscripcion.entity");
 let AcademicoService = class AcademicoService {
     estudianteRepo;
     fichaMedicaRepo;
     categoriaRepo;
     personalCategoriaRepo;
-    constructor(estudianteRepo, fichaMedicaRepo, categoriaRepo, personalCategoriaRepo) {
+    solicitudRepo;
+    constructor(estudianteRepo, fichaMedicaRepo, categoriaRepo, personalCategoriaRepo, solicitudRepo) {
         this.estudianteRepo = estudianteRepo;
         this.fichaMedicaRepo = fichaMedicaRepo;
         this.categoriaRepo = categoriaRepo;
         this.personalCategoriaRepo = personalCategoriaRepo;
+        this.solicitudRepo = solicitudRepo;
     }
     async createEstudiante(createEstudianteDto) {
         const nuevoEstudiante = this.estudianteRepo.create(createEstudianteDto);
@@ -119,6 +122,69 @@ let AcademicoService = class AcademicoService {
             throw new common_1.NotFoundException(`Asignación con ID ${id} no encontrada`);
         await this.personalCategoriaRepo.remove(asignacion);
     }
+    async createSolicitud(dto) {
+        const hoy = new Date();
+        const nac = new Date(dto.fecha_nacimiento);
+        let edad = hoy.getFullYear() - nac.getFullYear();
+        const mes = hoy.getMonth() - nac.getMonth();
+        if (mes < 0 || (mes === 0 && hoy.getDate() < nac.getDate())) {
+            edad--;
+        }
+        if (isNaN(nac.getTime()) || edad < 6) {
+            throw new common_1.BadRequestException('El estudiante debe tener al menos 6 años cumplidos para registrar la solicitud de inscripción.');
+        }
+        const nuevaSolicitud = this.solicitudRepo.create({
+            ...dto,
+            estado: solicitud_inscripcion_entity_1.EstadoSolicitud.PENDIENTE,
+            fecha_solicitud: hoy.toISOString().split('T')[0],
+        });
+        return await this.solicitudRepo.save(nuevaSolicitud);
+    }
+    async findAllSolicitudes(representanteId) {
+        const where = representanteId ? { representante_id: representanteId } : {};
+        return await this.solicitudRepo.find({
+            where,
+            relations: { representante: true, categoria: true },
+            order: { id: 'DESC' },
+        });
+    }
+    async findOneSolicitud(id) {
+        const solicitud = await this.solicitudRepo.findOne({
+            where: { id },
+            relations: { representante: true, categoria: true },
+        });
+        if (!solicitud)
+            throw new common_1.NotFoundException(`Solicitud con ID ${id} no encontrada`);
+        return solicitud;
+    }
+    async aprobarSolicitud(id) {
+        const solicitud = await this.findOneSolicitud(id);
+        if (solicitud.estado !== solicitud_inscripcion_entity_1.EstadoSolicitud.PENDIENTE) {
+            throw new common_1.BadRequestException(`La solicitud ya se encuentra en estado: ${solicitud.estado}`);
+        }
+        solicitud.estado = solicitud_inscripcion_entity_1.EstadoSolicitud.APROBADA;
+        solicitud.fecha_respuesta = new Date().toISOString().split('T')[0];
+        const solicitudGuardada = await this.solicitudRepo.save(solicitud);
+        await this.createEstudiante({
+            representante_id: solicitud.representante_id,
+            categoria_id: solicitud.categoria_id,
+            nombre: solicitud.nombre_estudiante,
+            apellido: solicitud.apellido_estudiante,
+            fecha_nacimiento: solicitud.fecha_nacimiento,
+            fecha_ingreso: new Date().toISOString().split('T')[0],
+        });
+        return solicitudGuardada;
+    }
+    async rechazarSolicitud(id, motivo) {
+        const solicitud = await this.findOneSolicitud(id);
+        if (solicitud.estado !== solicitud_inscripcion_entity_1.EstadoSolicitud.PENDIENTE) {
+            throw new common_1.BadRequestException(`La solicitud ya se encuentra en estado: ${solicitud.estado}`);
+        }
+        solicitud.estado = solicitud_inscripcion_entity_1.EstadoSolicitud.RECHAZADA;
+        solicitud.motivo_rechazo = motivo || 'Solicitud rechazada por la administración';
+        solicitud.fecha_respuesta = new Date().toISOString().split('T')[0];
+        return await this.solicitudRepo.save(solicitud);
+    }
 };
 exports.AcademicoService = AcademicoService;
 exports.AcademicoService = AcademicoService = __decorate([
@@ -127,7 +193,9 @@ exports.AcademicoService = AcademicoService = __decorate([
     __param(1, (0, typeorm_1.InjectRepository)(ficha_medica_entity_1.FichaMedica)),
     __param(2, (0, typeorm_1.InjectRepository)(categoria_entity_1.Categoria)),
     __param(3, (0, typeorm_1.InjectRepository)(personal_categoria_entity_1.PersonalCategoria)),
+    __param(4, (0, typeorm_1.InjectRepository)(solicitud_inscripcion_entity_1.SolicitudInscripcion)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
+        typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository])

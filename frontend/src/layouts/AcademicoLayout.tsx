@@ -54,6 +54,20 @@ const AcademicoLayout: React.FC = () => {
         >
           Asignación de Personal
         </NavLink>
+        <NavLink 
+          to="/dashboard/academico/solicitudes"
+          style={({ isActive }) => ({
+            padding: '1rem 1.5rem',
+            textDecoration: 'none',
+            color: isActive ? 'var(--primary-blue)' : '#666',
+            fontWeight: isActive ? 600 : 500,
+            borderBottom: isActive ? '3px solid var(--primary-blue)' : '3px solid transparent',
+            marginBottom: '-2px',
+            transition: 'all 0.2s ease'
+          })}
+        >
+          Solicitudes de Inscripción
+        </NavLink>
       </div>
 
       <Outlet />

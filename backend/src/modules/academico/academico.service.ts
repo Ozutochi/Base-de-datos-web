@@ -1,12 +1,14 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Estudiante } from '../../entities/estudiante.entity';
 import { FichaMedica } from '../../entities/ficha-medica.entity';
 import { Categoria } from '../../entities/categoria.entity';
 import { PersonalCategoria } from '../../entities/personal-categoria.entity';
+import { SolicitudInscripcion, EstadoSolicitud } from '../../entities/solicitud-inscripcion.entity';
 import { CreateEstudianteDto } from './dto/create-estudiante.dto';
 import { CreateCategoriaDto, UpdateFichaMedicaDto, CreatePersonalCategoriaDto } from './dto/academico.dtos';
+import { CreateSolicitudInscripcionDto } from './dto/create-solicitud-inscripcion.dto';
 
 @Injectable()
 export class AcademicoService {
@@ -19,6 +21,8 @@ export class AcademicoService {
     private readonly categoriaRepo: Repository<Categoria>,
     @InjectRepository(PersonalCategoria)
     private readonly personalCategoriaRepo: Repository<PersonalCategoria>,
+    @InjectRepository(SolicitudInscripcion)
+    private readonly solicitudRepo: Repository<SolicitudInscripcion>,
   ) {}
 
   // --- ESTUDIANTES ---
@@ -131,5 +135,81 @@ export class AcademicoService {
     const asignacion = await this.personalCategoriaRepo.findOne({ where: { id } });
     if (!asignacion) throw new NotFoundException(`Asignación con ID ${id} no encontrada`);
     await this.personalCategoriaRepo.remove(asignacion);
+  }
+
+  // --- SOLICITUDES DE INSCRIPCION ---
+  async createSolicitud(dto: CreateSolicitudInscripcionDto): Promise<SolicitudInscripcion> {
+    const hoy = new Date();
+    const nac = new Date(dto.fecha_nacimiento);
+    let edad = hoy.getFullYear() - nac.getFullYear();
+    const mes = hoy.getMonth() - nac.getMonth();
+    if (mes < 0 || (mes === 0 && hoy.getDate() < nac.getDate())) {
+      edad--;
+    }
+
+    if (isNaN(nac.getTime()) || edad < 6) {
+      throw new BadRequestException('El estudiante debe tener al menos 6 años cumplidos para registrar la solicitud de inscripción.');
+    }
+
+    const nuevaSolicitud = this.solicitudRepo.create({
+      ...dto,
+      estado: EstadoSolicitud.PENDIENTE,
+      fecha_solicitud: hoy.toISOString().split('T')[0],
+    });
+    return await this.solicitudRepo.save(nuevaSolicitud);
+  }
+
+  async findAllSolicitudes(representanteId?: number): Promise<SolicitudInscripcion[]> {
+    const where = representanteId ? { representante_id: representanteId } : {};
+    return await this.solicitudRepo.find({
+      where,
+      relations: { representante: true, categoria: true },
+      order: { id: 'DESC' },
+    });
+  }
+
+  async findOneSolicitud(id: number): Promise<SolicitudInscripcion> {
+    const solicitud = await this.solicitudRepo.findOne({
+      where: { id },
+      relations: { representante: true, categoria: true },
+    });
+    if (!solicitud) throw new NotFoundException(`Solicitud con ID ${id} no encontrada`);
+    return solicitud;
+  }
+
+  async aprobarSolicitud(id: number): Promise<SolicitudInscripcion> {
+    const solicitud = await this.findOneSolicitud(id);
+    if (solicitud.estado !== EstadoSolicitud.PENDIENTE) {
+      throw new BadRequestException(`La solicitud ya se encuentra en estado: ${solicitud.estado}`);
+    }
+
+    solicitud.estado = EstadoSolicitud.APROBADA;
+    solicitud.fecha_respuesta = new Date().toISOString().split('T')[0];
+    const solicitudGuardada = await this.solicitudRepo.save(solicitud);
+
+    // Crear el estudiante automáticamente
+    await this.createEstudiante({
+      representante_id: solicitud.representante_id,
+      categoria_id: solicitud.categoria_id,
+      nombre: solicitud.nombre_estudiante,
+      apellido: solicitud.apellido_estudiante,
+      fecha_nacimiento: solicitud.fecha_nacimiento,
+      fecha_ingreso: new Date().toISOString().split('T')[0],
+    });
+
+    return solicitudGuardada;
+  }
+
+  async rechazarSolicitud(id: number, motivo?: string): Promise<SolicitudInscripcion> {
+    const solicitud = await this.findOneSolicitud(id);
+    if (solicitud.estado !== EstadoSolicitud.PENDIENTE) {
+      throw new BadRequestException(`La solicitud ya se encuentra en estado: ${solicitud.estado}`);
+    }
+
+    solicitud.estado = EstadoSolicitud.RECHAZADA;
+    solicitud.motivo_rechazo = motivo || 'Solicitud rechazada por la administración';
+    solicitud.fecha_respuesta = new Date().toISOString().split('T')[0];
+
+    return await this.solicitudRepo.save(solicitud);
   }
 }

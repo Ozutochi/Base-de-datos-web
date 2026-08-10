@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FileText, Search, AlertOctagon, Filter } from 'lucide-react';
+import { FileText, AlertOctagon, Filter } from 'lucide-react';
 import api from '../services/api';
 
 const ReportesMorosidad: React.FC = () => {
@@ -49,7 +49,7 @@ const ReportesMorosidad: React.FC = () => {
     });
 
     // Filtrar los que tengan >= 2 deudas
-    for (const [eId, deudas] of Object.entries(deudasPorEstudiante)) {
+    for (const [, deudas] of Object.entries(deudasPorEstudiante)) {
       if (deudas.length >= 2) {
         resultados.push(...deudas);
       }

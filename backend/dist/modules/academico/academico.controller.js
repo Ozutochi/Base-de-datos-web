@@ -17,6 +17,7 @@ const common_1 = require("@nestjs/common");
 const academico_service_1 = require("./academico.service");
 const create_estudiante_dto_1 = require("./dto/create-estudiante.dto");
 const academico_dtos_1 = require("./dto/academico.dtos");
+const create_solicitud_inscripcion_dto_1 = require("./dto/create-solicitud-inscripcion.dto");
 let AcademicoController = class AcademicoController {
     academicoService;
     constructor(academicoService) {
@@ -66,6 +67,21 @@ let AcademicoController = class AcademicoController {
     }
     removeAsignacion(id) {
         return this.academicoService.removeAsignacion(id);
+    }
+    createSolicitud(dto) {
+        return this.academicoService.createSolicitud(dto);
+    }
+    findAllSolicitudes(representanteId) {
+        return this.academicoService.findAllSolicitudes(representanteId ? parseInt(representanteId, 10) : undefined);
+    }
+    findOneSolicitud(id) {
+        return this.academicoService.findOneSolicitud(id);
+    }
+    aprobarSolicitud(id) {
+        return this.academicoService.aprobarSolicitud(id);
+    }
+    rechazarSolicitud(id, dto) {
+        return this.academicoService.rechazarSolicitud(id, dto?.motivo_rechazo);
     }
 };
 exports.AcademicoController = AcademicoController;
@@ -173,6 +189,42 @@ __decorate([
     __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", void 0)
 ], AcademicoController.prototype, "removeAsignacion", null);
+__decorate([
+    (0, common_1.Post)('solicitudes'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [create_solicitud_inscripcion_dto_1.CreateSolicitudInscripcionDto]),
+    __metadata("design:returntype", void 0)
+], AcademicoController.prototype, "createSolicitud", null);
+__decorate([
+    (0, common_1.Get)('solicitudes'),
+    __param(0, (0, common_1.Query)('representante_id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], AcademicoController.prototype, "findAllSolicitudes", null);
+__decorate([
+    (0, common_1.Get)('solicitudes/:id'),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", void 0)
+], AcademicoController.prototype, "findOneSolicitud", null);
+__decorate([
+    (0, common_1.Patch)('solicitudes/:id/aprobar'),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", void 0)
+], AcademicoController.prototype, "aprobarSolicitud", null);
+__decorate([
+    (0, common_1.Patch)('solicitudes/:id/rechazar'),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, create_solicitud_inscripcion_dto_1.RechazarSolicitudDto]),
+    __metadata("design:returntype", void 0)
+], AcademicoController.prototype, "rechazarSolicitud", null);
 exports.AcademicoController = AcademicoController = __decorate([
     (0, common_1.Controller)('academico'),
     __metadata("design:paramtypes", [academico_service_1.AcademicoService])

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Mail, Lock, ArrowLeft, Shield } from 'lucide-react';
+import { User, Mail, Lock, Shield } from 'lucide-react';
 import haalandImg from '../assets/haaland.png';
 import api from '../services/api';
 

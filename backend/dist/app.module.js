@@ -25,6 +25,7 @@ const inventario_entity_1 = require("./entities/inventario.entity");
 const asignacion_equipamiento_entity_1 = require("./entities/asignacion-equipamiento.entity");
 const mensualidad_entity_1 = require("./entities/mensualidad.entity");
 const pago_entity_1 = require("./entities/pago.entity");
+const solicitud_inscripcion_entity_1 = require("./entities/solicitud-inscripcion.entity");
 const usuarios_module_1 = require("./modules/usuarios/usuarios.module");
 const academico_module_1 = require("./modules/academico/academico.module");
 const deportivo_module_1 = require("./modules/deportivo/deportivo.module");
@@ -59,6 +60,7 @@ exports.AppModule = AppModule = __decorate([
                     asignacion_equipamiento_entity_1.AsignacionEquipamiento,
                     mensualidad_entity_1.Mensualidad,
                     pago_entity_1.Pago,
+                    solicitud_inscripcion_entity_1.SolicitudInscripcion,
                 ],
                 synchronize: true,
             }),

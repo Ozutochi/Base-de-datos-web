@@ -62,7 +62,14 @@ let FinancieroService = class FinancieroService {
         return pago;
     }
     async findAllPagos() {
-        return await this.pagoRepo.find({ relations: { representante: true, mensualidad: true, verificador: true } });
+        return await this.pagoRepo.find({
+            relations: {
+                representante: true,
+                mensualidad: { estudiante: true },
+                verificador: true,
+            },
+            order: { id: 'DESC' },
+        });
     }
     async updatePago(id, dto) {
         await this.pagoRepo.update(id, dto);

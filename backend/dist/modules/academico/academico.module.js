@@ -15,12 +15,13 @@ const estudiante_entity_1 = require("../../entities/estudiante.entity");
 const ficha_medica_entity_1 = require("../../entities/ficha-medica.entity");
 const categoria_entity_1 = require("../../entities/categoria.entity");
 const personal_categoria_entity_1 = require("../../entities/personal-categoria.entity");
+const solicitud_inscripcion_entity_1 = require("../../entities/solicitud-inscripcion.entity");
 let AcademicoModule = class AcademicoModule {
 };
 exports.AcademicoModule = AcademicoModule;
 exports.AcademicoModule = AcademicoModule = __decorate([
     (0, common_1.Module)({
-        imports: [typeorm_1.TypeOrmModule.forFeature([estudiante_entity_1.Estudiante, ficha_medica_entity_1.FichaMedica, categoria_entity_1.Categoria, personal_categoria_entity_1.PersonalCategoria])],
+        imports: [typeorm_1.TypeOrmModule.forFeature([estudiante_entity_1.Estudiante, ficha_medica_entity_1.FichaMedica, categoria_entity_1.Categoria, personal_categoria_entity_1.PersonalCategoria, solicitud_inscripcion_entity_1.SolicitudInscripcion])],
         controllers: [academico_controller_1.AcademicoController],
         providers: [academico_service_1.AcademicoService]
     })

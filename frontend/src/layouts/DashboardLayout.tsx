@@ -8,8 +8,7 @@ import {
   Trophy, 
   Wallet, 
   Package, 
-  LogOut, 
-  Search 
+  LogOut
 } from 'lucide-react';
 
 const DashboardLayout: React.FC = () => {

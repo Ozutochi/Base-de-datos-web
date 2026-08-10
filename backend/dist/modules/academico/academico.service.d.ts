@@ -3,14 +3,17 @@ import { Estudiante } from '../../entities/estudiante.entity';
 import { FichaMedica } from '../../entities/ficha-medica.entity';
 import { Categoria } from '../../entities/categoria.entity';
 import { PersonalCategoria } from '../../entities/personal-categoria.entity';
+import { SolicitudInscripcion } from '../../entities/solicitud-inscripcion.entity';
 import { CreateEstudianteDto } from './dto/create-estudiante.dto';
 import { CreateCategoriaDto, UpdateFichaMedicaDto, CreatePersonalCategoriaDto } from './dto/academico.dtos';
+import { CreateSolicitudInscripcionDto } from './dto/create-solicitud-inscripcion.dto';
 export declare class AcademicoService {
     private readonly estudianteRepo;
     private readonly fichaMedicaRepo;
     private readonly categoriaRepo;
     private readonly personalCategoriaRepo;
-    constructor(estudianteRepo: Repository<Estudiante>, fichaMedicaRepo: Repository<FichaMedica>, categoriaRepo: Repository<Categoria>, personalCategoriaRepo: Repository<PersonalCategoria>);
+    private readonly solicitudRepo;
+    constructor(estudianteRepo: Repository<Estudiante>, fichaMedicaRepo: Repository<FichaMedica>, categoriaRepo: Repository<Categoria>, personalCategoriaRepo: Repository<PersonalCategoria>, solicitudRepo: Repository<SolicitudInscripcion>);
     createEstudiante(createEstudianteDto: CreateEstudianteDto): Promise<Estudiante>;
     findAllEstudiantes(): Promise<Estudiante[]>;
     findOneEstudiante(id: number): Promise<Estudiante>;
@@ -26,4 +29,9 @@ export declare class AcademicoService {
     findAllAsignaciones(): Promise<PersonalCategoria[]>;
     asignarPersonal(dto: CreatePersonalCategoriaDto): Promise<PersonalCategoria>;
     removeAsignacion(id: number): Promise<void>;
+    createSolicitud(dto: CreateSolicitudInscripcionDto): Promise<SolicitudInscripcion>;
+    findAllSolicitudes(representanteId?: number): Promise<SolicitudInscripcion[]>;
+    findOneSolicitud(id: number): Promise<SolicitudInscripcion>;
+    aprobarSolicitud(id: number): Promise<SolicitudInscripcion>;
+    rechazarSolicitud(id: number, motivo?: string): Promise<SolicitudInscripcion>;
 }

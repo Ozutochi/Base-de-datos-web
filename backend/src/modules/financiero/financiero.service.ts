@@ -56,7 +56,14 @@ export class FinancieroService {
     return pago;
   }
   async findAllPagos(): Promise<Pago[]> {
-    return await this.pagoRepo.find({ relations: { representante: true, mensualidad: true, verificador: true } });
+    return await this.pagoRepo.find({
+      relations: {
+        representante: true,
+        mensualidad: { estudiante: true },
+        verificador: true,
+      },
+      order: { id: 'DESC' },
+    });
   }
   async updatePago(id: number, dto: any): Promise<Pago> {
     await this.pagoRepo.update(id, dto);

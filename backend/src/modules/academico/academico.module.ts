@@ -6,9 +6,10 @@ import { Estudiante } from '../../entities/estudiante.entity';
 import { FichaMedica } from '../../entities/ficha-medica.entity';
 import { Categoria } from '../../entities/categoria.entity';
 import { PersonalCategoria } from '../../entities/personal-categoria.entity';
+import { SolicitudInscripcion } from '../../entities/solicitud-inscripcion.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Estudiante, FichaMedica, Categoria, PersonalCategoria])],
+  imports: [TypeOrmModule.forFeature([Estudiante, FichaMedica, Categoria, PersonalCategoria, SolicitudInscripcion])],
   controllers: [AcademicoController],
   providers: [AcademicoService]
 })

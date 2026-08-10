@@ -1,7 +1,8 @@
-import { Controller, Get, Post, Body, Param, ParseIntPipe, Patch, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, ParseIntPipe, Patch, Delete, Query } from '@nestjs/common';
 import { AcademicoService } from './academico.service';
 import { CreateEstudianteDto } from './dto/create-estudiante.dto';
 import { CreateCategoriaDto, UpdateFichaMedicaDto, CreatePersonalCategoriaDto } from './dto/academico.dtos';
+import { CreateSolicitudInscripcionDto, RechazarSolicitudDto } from './dto/create-solicitud-inscripcion.dto';
 
 @Controller('academico')
 export class AcademicoController {
@@ -83,5 +84,31 @@ export class AcademicoController {
   @Delete('personal/:id')
   removeAsignacion(@Param('id', ParseIntPipe) id: number) {
     return this.academicoService.removeAsignacion(id);
+  }
+
+  // --- SOLICITUDES DE INSCRIPCIÓN ---
+  @Post('solicitudes')
+  createSolicitud(@Body() dto: CreateSolicitudInscripcionDto) {
+    return this.academicoService.createSolicitud(dto);
+  }
+
+  @Get('solicitudes')
+  findAllSolicitudes(@Query('representante_id') representanteId?: string) {
+    return this.academicoService.findAllSolicitudes(representanteId ? parseInt(representanteId, 10) : undefined);
+  }
+
+  @Get('solicitudes/:id')
+  findOneSolicitud(@Param('id', ParseIntPipe) id: number) {
+    return this.academicoService.findOneSolicitud(id);
+  }
+
+  @Patch('solicitudes/:id/aprobar')
+  aprobarSolicitud(@Param('id', ParseIntPipe) id: number) {
+    return this.academicoService.aprobarSolicitud(id);
+  }
+
+  @Patch('solicitudes/:id/rechazar')
+  rechazarSolicitud(@Param('id', ParseIntPipe) id: number, @Body() dto: RechazarSolicitudDto) {
+    return this.academicoService.rechazarSolicitud(id, dto?.motivo_rechazo);
   }
 }

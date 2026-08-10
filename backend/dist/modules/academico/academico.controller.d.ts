@@ -1,6 +1,7 @@
 import { AcademicoService } from './academico.service';
 import { CreateEstudianteDto } from './dto/create-estudiante.dto';
 import { CreateCategoriaDto, UpdateFichaMedicaDto, CreatePersonalCategoriaDto } from './dto/academico.dtos';
+import { CreateSolicitudInscripcionDto, RechazarSolicitudDto } from './dto/create-solicitud-inscripcion.dto';
 export declare class AcademicoController {
     private readonly academicoService;
     constructor(academicoService: AcademicoService);
@@ -19,4 +20,9 @@ export declare class AcademicoController {
     findAllAsignaciones(): Promise<import("../../entities/personal-categoria.entity").PersonalCategoria[]>;
     asignarPersonal(dto: CreatePersonalCategoriaDto): Promise<import("../../entities/personal-categoria.entity").PersonalCategoria>;
     removeAsignacion(id: number): Promise<void>;
+    createSolicitud(dto: CreateSolicitudInscripcionDto): Promise<import("../../entities/solicitud-inscripcion.entity").SolicitudInscripcion>;
+    findAllSolicitudes(representanteId?: string): Promise<import("../../entities/solicitud-inscripcion.entity").SolicitudInscripcion[]>;
+    findOneSolicitud(id: number): Promise<import("../../entities/solicitud-inscripcion.entity").SolicitudInscripcion>;
+    aprobarSolicitud(id: number): Promise<import("../../entities/solicitud-inscripcion.entity").SolicitudInscripcion>;
+    rechazarSolicitud(id: number, dto: RechazarSolicitudDto): Promise<import("../../entities/solicitud-inscripcion.entity").SolicitudInscripcion>;
 }
